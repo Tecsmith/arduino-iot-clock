@@ -14,7 +14,7 @@ extern IPAddress SNTP_Server_IP[];
  
 class NTPClass {
   public:
-    NTPClass();
+    /* NTPClass(); */
     static bool available();
     static time_t get();
     static void read(tmElements_t &tm);

@@ -14,12 +14,12 @@ IPAddress SNTP_Server_IP[] = { (uint32_t)0, (uint32_t)0, (uint32_t)0 };  // unin
 bool _NTP_init = false;
 EthernetUDP _NTP_UDP;
 
-const int NTP_PACKET_SIZE = 48;  // NTP time stamp is in the first 48 bytes of the message
+const uint8_t NTP_PACKET_SIZE = 48;  // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE ]; //buffer to hold incoming and outgoing packets 
 
-NTPClass::NTPClass() {
+/* NTPClass::NTPClass() {
   // do nothing
-}
+} */
 
 bool NTPClass::available() {
   if (!_NTP_init) {
@@ -32,13 +32,11 @@ bool NTPClass::available() {
 time_t NTPClass::get() {
   int retry;
 
-  if (SNTP_Server_IP[0][3] == 0) return -1;
-  if (!available()) return -1;
-
+  if (!available()) return 0;
   int svr = 0;
 
   while (svr < 3) {
-    if (SNTP_Server_IP[svr][3] == 0) return -1;
+    if (SNTP_Server_IP[svr][3] == 0) return 0;
     retry = 10;
     sendNTPpacket( SNTP_Server_IP[svr] );
     while (retry > 0) {
