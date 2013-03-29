@@ -17,10 +17,6 @@ EthernetUDP _NTP_UDP;
 const uint8_t NTP_PACKET_SIZE = 48;  // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[ NTP_PACKET_SIZE ]; //buffer to hold incoming and outgoing packets 
 
-/* NTPClass::NTPClass() {
-  // do nothing
-} */
-
 bool NTPClass::available() {
   if (!_NTP_init) {
     _NTP_init = true;
@@ -31,16 +27,14 @@ bool NTPClass::available() {
 
 time_t NTPClass::get() {
   int retry;
-
-  if (!available()) return 0;
   int svr = 0;
 
   while (svr < 3) {
     if (SNTP_Server_IP[svr][3] == 0) return 0;
-    retry = 10;
+    retry = 6;
     sendNTPpacket( SNTP_Server_IP[svr] );
     while (retry > 0) {
-      delay(100);
+      delay(250);
       if ( _NTP_UDP.parsePacket() ) {  
         _NTP_UDP.read(packetBuffer, NTP_PACKET_SIZE);
         unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);

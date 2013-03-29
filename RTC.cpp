@@ -5,6 +5,7 @@
 #include "RTC.h"
 #include <Time.h>
 #include <Wire.h>
+#include <binary.h>
 
 uint8_t tbuff[7];
 
@@ -17,8 +18,8 @@ bool RTCClass::available() {
 }
 
 void RTCClass::begin() {
-  tbuff[0] = 0x00;  // Contril Reg
-  tbuff[1] = 0x00;  // Control/Status Reg.
+  tbuff[0] = B00000000;  // Contril Reg
+  tbuff[1] = B00000000;  // Control/Status Reg.
   _w(0x0E, 2);
 }
 
@@ -57,13 +58,13 @@ void RTCClass::write(tmElements_t tm) {
 
 void RTCClass::setAlarm2(tmElements_t tm) {
   if (!_r(0x0E, 1)) return;  // Control reg.
-  tbuff[0] = (tbuff[0] | 0xF9) & 0x06;  // set INTCN & A2IE on
+  tbuff[0] |= B00000110;  // set INTCN & A2IE on
   _w(0x0E, 1);
 }
 
 void RTCClass::resetAlarm2() {
   if (!_r(0x0F, 1)) return;  // Control/Status reg.
-  tbuff[0] &= 0xFD;  // set A2F off
+  tbuff[0] &= B11111101;  // set A2F off
   _w(0x0F, 1);
 }
 

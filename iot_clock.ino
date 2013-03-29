@@ -47,9 +47,13 @@ static ButtonDebouncer debouncer;
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 IPAddress ip( 192, 168, 1, 13 );
 IPAddress ip_dns( 192, 168, 1, 1 );
+IPAddress ip_gw( 192, 168, 1, 1 );
+IPAddress ip_sn( 255, 255, 255, 0 );
 const char serverName1[] PROGMEM = "0.pool.ntp.org";
 const char serverName2[] PROGMEM = "1.pool.ntp.org";
 const char serverName3[] PROGMEM = "2.pool.ntp.org";
+
+const char s_SYNC[] PROGMEM = "Sync...";
 
 DNSClient DNS = DNSClient();
 #endif
@@ -58,11 +62,11 @@ DNSClient DNS = DNSClient();
 int mode = 0;
 unsigned long last_m;
 
-bool featureRtc = false;
+bool featureRtc = true;
 #ifdef ETHERSHEILD
-bool featureEth = false;
-bool featureDns = false;
-bool int_0 = false;
+bool featureEth = true;
+bool dnsDone = false;
+bool alm_2 = true;
 #endif
 
 byte piezo = 5;  // pin for speaker
@@ -73,6 +77,11 @@ byte anlgbtn2 = A3;
  * Arduino Setup
  */
 void setup() {
+  // init Speaker
+  pinMode(piezo, OUTPUT);
+  beep();
+
+  // set startup mode
   mode = 0;
   
   // init DMD
@@ -93,29 +102,26 @@ void setup() {
   debouncer = ButtonDebouncer(btnReader, 100);
 
   #ifdef ETHERSHEILD
+
   // start Ethernet and UDP
-  Ethernet.begin(mac, ip, ip_dns);  // using DHCP makes the sketch too big!
+  Ethernet.begin(mac, ip, ip_dns, ip_gw, ip_sn);  // using DHCP makes the sketch too big!
   delay(1000);  // give the Ethernet shield a second to initialize
   featureEth = (Ethernet.localIP()[3] != 0);
   if (featureEth) {
-    DNS.begin(ip_dns);
-  }
-  featureDns = false;
-  #endif
+    // DNS.begin(ip_dns);
+  };
+  dnsDone = false;
 
-  #ifdef ETHERSHEILD
   // setup alarm
-  int_0 = true;
+  alm_2 = true;
   attachInterrupt(0, alarmTrigger, CHANGE);
-  tmElements_t tm;  tm.Hour = 4;  tm.Minute = 15;
+  tmElements_t tm;  tm.Hour = 7;  tm.Minute = 45;
   RTC.setAlarm2(tm);
+  RTC.resetAlarm2();
+
   #endif
 
   dmd.clearScreen(true);
-
-  // init Speaker
-  pinMode(piezo, OUTPUT);
-  beep();
 }
 
 /**
@@ -126,8 +132,8 @@ void loop() {
   unsigned long m;
 
   #ifdef ETHERSHEILD
-  if (int_0) {
-    int_0 = false;
+  if (alm_2) {
+    alm_2 = false;
     RTC.resetAlarm2();
     syncTime();
   }
@@ -139,10 +145,14 @@ void loop() {
     switch (bc) {
       case 1: setMode(mode + 1); break;
       case 2: setMode(mode - 1); break;
+      #ifdef ETHERSHEILD
+      case 3: alm_2 = true; break;
+      #endif;
       case 11:
       case 12:
       case 21:
-      case 22: 
+      case 22:
+        tone(piezo, 1500, 25);
         ChangeApp.key(bc, mode);
         break;
       case 30:
@@ -216,15 +226,18 @@ void btnReader(uint16_t &value) {
 }
 
 void setMode(int newMode) {
-  if ((mode == MODE_SET_TIME) || (mode == MODE_SET_DATE)) {
-    beep();
-    newMode = ChangeApp.save();
+  tone(piezo, 2000, 25);
+   if (newMode != mode) {
+
+    if ((mode == MODE_SET_TIME) || (mode == MODE_SET_DATE)) {
+      newMode = ChangeApp.save();
+    }
+
+    if (newMode > MODE_MAX) newMode = 1;
+    if (newMode < 1) newMode = MODE_MAX;
+
+    mode = newMode;
   }
-
-  if (newMode > MODE_MAX) newMode = 1;
-  if (newMode < 1) newMode = MODE_MAX;
-
-  mode = newMode;
 
   switch (mode) {
     case MODE_DIGITAL: DigitalApp.reset(); break;
@@ -237,20 +250,20 @@ void setMode(int newMode) {
 #ifdef ETHERSHEILD
 void alarmTrigger()  // Triggered when alarm interupt fired
 {
-  int_0 = true;
+  alm_2 = true;
 }
 #endif
 
 /**
  * Sync RTC time to NTP time if required
  */
+#ifdef ETHERSHEILD
 void syncTime() {
-  #ifdef ETHERSHEILD
   if ((!featureEth) || (!featureRtc))  return;
 
-  if (!featureDns) {
+  if (!dnsDone) {
+    dnsDone = true;
     IPAddress ts1, ts2, ts3;
-    featureDns = true;
     DNS.getHostByName(strcpy_P(buff, serverName1), ts1);
     DNS.getHostByName(strcpy_P(buff, serverName2), ts2);
     DNS.getHostByName(strcpy_P(buff, serverName3), ts3);
@@ -261,9 +274,14 @@ void syncTime() {
   t_ntp = NTP.get();
   if (t_ntp != 0) {
     t_rtc = RTC.get();
-    if (t_ntp != t_rtc) RTC.set(t_ntp);  // set the RTC time to NTP time
+    if (t_ntp != t_rtc) {
+      setTime(t_ntp);
+      RTC.set(t_ntp);  // set the RTC time to NTP time
+    }
   }
-  #endif
+
+  setMode(mode);
 }
+#endif
 
 /* eof */
