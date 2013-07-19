@@ -57,6 +57,11 @@ void RTCClass::write(tmElements_t tm) {
 }
 
 void RTCClass::setAlarm2(tmElements_t tm) {
+  tbuff[0] = dec2bcd(tm.Minute);
+  tbuff[1] = dec2bcd(tm.Hour);
+  tbuff[2] = B10000000;  // A2M4 = 1
+  _w(0x0B, 3);
+
   if (!_r(0x0E, 1)) return;  // Control reg.
   tbuff[0] |= B00000110;  // set INTCN & A2IE on
   _w(0x0E, 1);
@@ -68,7 +73,7 @@ void RTCClass::resetAlarm2() {
   _w(0x0F, 1);
 }
 
-void RTCClass::readTemperature(tpElements_t &tmp) {
+/* void RTCClass::readTemperature(tpElements_t &tmp) {
   if (_r(0x11, 2)) {
     tmp.Temp = tbuff[0];
     tmp.Decimal = (tbuff[0] >> 6) * 25;
@@ -76,7 +81,7 @@ void RTCClass::readTemperature(tpElements_t &tmp) {
     tmp.Temp = -99;
     tmp.Decimal = 0;
   }
-}
+} */
 
 uint8_t RTCClass::dec2bcd(uint8_t num) {
   return (num/10 * 16) + (num % 10);

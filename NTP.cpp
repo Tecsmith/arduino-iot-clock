@@ -59,6 +59,11 @@ void NTPClass::begin(IPAddress timeServer) {
   SNTP_Server_IP[0] = timeServer;
 }
 
+void NTPClass::begin(IPAddress timeServer1, IPAddress timeServer2) {
+  SNTP_Server_IP[0] = timeServer1;
+  SNTP_Server_IP[1] = timeServer2;
+}
+
 void NTPClass::begin(IPAddress timeServer1, IPAddress timeServer2, IPAddress timeServer3) {
   SNTP_Server_IP[0] = timeServer1;
   SNTP_Server_IP[1] = timeServer2;

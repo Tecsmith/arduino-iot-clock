@@ -1,5 +1,5 @@
 /*
- * IOT-Clock project
+ * IOT-Clock project (UNO + EtherSheild version)
 
   Copyright (c) 2013 Vino Rodrigues, Tecsmith
 
@@ -51,9 +51,7 @@ IPAddress ip_gw( 192, 168, 1, 1 );
 IPAddress ip_sn( 255, 255, 255, 0 );
 const char serverName1[] PROGMEM = "0.pool.ntp.org";
 const char serverName2[] PROGMEM = "1.pool.ntp.org";
-const char serverName3[] PROGMEM = "2.pool.ntp.org";
-
-const char s_SYNC[] PROGMEM = "Sync...";
+// const char serverName3[] PROGMEM = "2.pool.ntp.org";
 
 DNSClient DNS = DNSClient();
 #endif
@@ -79,7 +77,7 @@ byte anlgbtn2 = A3;
 void setup() {
   // init Speaker
   pinMode(piezo, OUTPUT);
-  beep();
+  beep(1000);
 
   // set startup mode
   mode = 0;
@@ -113,11 +111,11 @@ void setup() {
   dnsDone = false;
 
   // setup alarm
-  alm_2 = true;
   attachInterrupt(0, alarmTrigger, CHANGE);
-  tmElements_t tm;  tm.Hour = 7;  tm.Minute = 45;
+  tmElements_t tm;  tm.Hour = 7;  tm.Minute = 45;  // reset every 7:45am
   RTC.setAlarm2(tm);
   RTC.resetAlarm2();
+  alm_2 = true;
 
   #endif
 
@@ -134,8 +132,10 @@ void loop() {
   #ifdef ETHERSHEILD
   if (alm_2) {
     alm_2 = false;
-    RTC.resetAlarm2();
+
     syncTime();
+
+    RTC.resetAlarm2();
   }
   #endif
 
@@ -187,16 +187,15 @@ void loop() {
  * Interrupt handler for Timer1 (TimerOne) driven DMD refresh scanning, this gets
  * called at the period set in Timer1.initialize();
  */
-void ScanDMD()
-{ 
+void ScanDMD() { 
   dmd.scanDisplayBySPI();
 }
 
 /**
  * Beep
  */
-void beep() {
-  tone(piezo, 1000, 50);
+void beep(unsigned int fr) {
+  tone(piezo, fr, 50);
 }
 
 void reboot() {
@@ -248,8 +247,8 @@ void setMode(int newMode) {
 }
 
 #ifdef ETHERSHEILD
-void alarmTrigger()  // Triggered when alarm interupt fired
-{
+/** Triggered when alarm interupt fired */
+void alarmTrigger() {
   alm_2 = true;
 }
 #endif
@@ -263,11 +262,11 @@ void syncTime() {
 
   if (!dnsDone) {
     dnsDone = true;
-    IPAddress ts1, ts2, ts3;
+    IPAddress ts1, ts2 /*, ts3 */;
     DNS.getHostByName(strcpy_P(buff, serverName1), ts1);
     DNS.getHostByName(strcpy_P(buff, serverName2), ts2);
-    DNS.getHostByName(strcpy_P(buff, serverName3), ts3);
-    NTP.begin(ts1, ts2, ts3);
+    // DNS.getHostByName(strcpy_P(buff, serverName3), ts3);
+    NTP.begin(ts1, ts2 /*, ts3 */ );
   }
 
   time_t t_ntp, t_rtc;
@@ -280,6 +279,8 @@ void syncTime() {
     }
   }
 
+
+  beep(2000);
   setMode(mode);
 }
 #endif

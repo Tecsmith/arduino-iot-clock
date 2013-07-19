@@ -119,12 +119,7 @@ void AppDigital::doTemp() {
 
   getTemp();
   t1 = temp.Temp;
-  switch (temp.Decimal) {
-    case 25: t2 = 2; break;
-    case 50: t2 = 5; break;
-    case 75: t2 = 8; break;
-    default: t2 = 0; break;
-  }
+  t2 = round(temp.Dec2 / 10);
 
   xo = 5;
   len = sprintf(buff, strcpy_P(buf2, s_TEMP_MASK), t1, t2);

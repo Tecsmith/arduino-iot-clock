@@ -19,6 +19,7 @@ class NTPClass {
     static time_t get();
     static void read(tmElements_t &tm);
     static void begin(IPAddress timeServer);
+    static void begin(IPAddress timeServer1, IPAddress timeServer2);
     static void begin(IPAddress timeServer1, IPAddress timeServer2, IPAddress timeServer3);
   private:
     static void sendNTPpacket(IPAddress timeServer);
